@@ -1,0 +1,13 @@
+.env
+config.py
+*.ini
+dags/config/*
+!dags/config/.gitkeep
+logs/*
+!logs/.gitkeep
+__pycache__/
+token.json
+client_secret.json
+service_account.json
+google_oauth.py
+.DS_Store
