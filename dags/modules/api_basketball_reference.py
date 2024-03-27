@@ -50,3 +50,36 @@ def _convert_date_to_str(date_now):
     year_now = date_now.strftime("%Y")
 
     return month_now, day_now, year_now
+
+def _get_box_score_list():
+    """
+    Get a box score list in a match day.
+
+    :return: A list of html address of box score in a match day
+    """
+
+    # Convert the UTC date to the Eastern Time Zone
+    date_now = _parse_date_now()
+
+    # Convert the Eastern Time Zone to month, day, and year
+    month_now, day_now, year_now = _convert_date_to_str(date_now)
+
+    # Combine month, day and year to the url
+    day_match_url = "https://www.basketball-reference.com/boxscores/index.fcgi?month={month}&day={day}&year={year}"
+    url = day_match_url.format(month=month_now, day=day_now, year=year_now)
+
+    # Get the page using Chrome WebDriver to get html elements
+    driver = webdriver.Chrome()
+    driver.get(url)
+    driver.execute_script("window.scrollTo(1,10000)")
+    time.sleep(2)
+    page = driver.page_source
+
+    # Using BeautifulSoup to parse the html of each match i.e. '/boxscores/202403180BOS.html'
+    soup = BeautifulSoup(page, 'html.parser')
+    box_score_link = soup.find_all("a", string="Box Score")
+    box_score_list = []
+    for link in box_score_link:
+        box_score_list.append(link.get('href'))
+
+    return box_score_list
