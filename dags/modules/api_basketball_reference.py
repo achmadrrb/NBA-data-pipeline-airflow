@@ -34,3 +34,19 @@ def _parse_date_now(tzone='US/Eastern'):
     date_now = utc_now.astimezone(target_timezone).date()
 
     return date_now
+
+def _convert_date_to_str(date_now):
+    """
+    Convert date to string; month, day, and year
+
+    :param date_now: a date as now.
+    :return: month, day, and year as US format MMDDYYYY
+    """
+    # Convert the Eastern Time Zone to month, day, and year
+    month_now = date_now.strftime("%m")
+    if month_now[0] == "0":
+        month_now = month_now[1]
+    day_now = date_now.strftime("%d")
+    year_now = date_now.strftime("%Y")
+
+    return month_now, day_now, year_now
