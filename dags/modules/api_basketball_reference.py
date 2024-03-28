@@ -179,3 +179,22 @@ def _add_team_name_col(df, team_index):
         df['Tm'] = new_team_col
 
     return df
+
+def _add_lineup_pos(df):
+    """
+    Add lineup position to dataframe to determine whether the player is a starter or not
+
+    :param df: dataframe that want to be added
+    :return: A dataframe with Game and Game Started in it
+    """
+    ## add lineup_pos
+    loc_team = df.columns.get_loc('Tm')
+    try:
+        df.insert(loc=loc_team + 1, column='G', value=1)
+        df.insert(loc=loc_team + 2, column='GS', value=1)
+    except ValueError:
+        df['G'] = 1
+        df['GS'] = 1
+    df.loc[5:, 'GS'] = 0
+
+    return df
