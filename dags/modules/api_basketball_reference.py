@@ -159,3 +159,23 @@ def _add_match_date_col(df, date_now):
         df["Date"] = new_matchdate_col
 
     return df
+
+def _add_team_name_col(df, team_index):
+    """
+    Add team name to dataframe
+
+    :param df: dataframe that want to be added
+    :param team_index: a team index to get a team name
+    :return: A dataframe with team name in it
+    """
+    ## add team name
+    team_caption = team_match_table[team_index].find_all('caption')[0]
+    team_name = team_caption.string
+    new_team_col = team_name.split('Basic')[0].strip()
+    loc_date = df.columns.get_loc('Date')
+    try:
+        df.insert(loc=loc_date + 1, column='Tm', value=new_team_col)
+    except ValueError:
+        df['Tm'] = new_team_col
+
+    return df
