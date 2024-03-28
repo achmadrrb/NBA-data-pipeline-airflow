@@ -259,3 +259,43 @@ def _extract_PM_col(df):
     df = df.drop(columns=['+/-'])
 
     return df
+
+def clean_data(df, date_now, team_index):
+    """
+    A combination of function that to clean data in dataframe
+
+    :param df: dataframe that want to be cleaned
+    :param datenow: a match day date in Eastern Time
+    :param team_index: a team index to get a team name
+    :return: A cleaned dataframe
+    """
+    # data cleaning helper function
+    df_proper_table = _proper_table(df)
+
+    # Data cleaning home_starters
+    # extract MP column to the right value
+    df_right_dtypes = _convert_dtypes(df_proper_table)
+
+    # Add supporting columns
+    ## add match day date
+    df_date_col = _add_match_date_col(df_right_dtypes, date_now)
+
+    ## add team name
+    df_team_col = _add_team_name_col(df_date_col, team_index)
+
+    ## add lineup_pos
+    df_lineup_pos_col  = _add_lineup_pos(df_team_col)
+
+    ## add 2P 2PA and 2P%
+    df_2s_col = _add_2s_col(df_lineup_pos_col)
+
+    ## add eFG%
+    df_eFG_col = _add_eFG_col(df_2s_col)
+
+    ## extract +/- column to separate column named PLUS and MINUS then drop the original column (+/- column)
+    df_PM_col = _extract_PM_col(df_eFG_col)
+
+    # fill NaN with 0.0
+    df = df_PM_col.fillna(0.0)
+
+    return df
