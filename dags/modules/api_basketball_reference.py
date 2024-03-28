@@ -221,3 +221,20 @@ def _add_2s_col(df):
         df["2P%"] = new_2PP_col
     
     return df
+
+def _add_eFG_col(df):
+    """
+    Add effective field goals percentage (eFG%) to dataframe
+
+    :param df: dataframe that want to be added
+    :return: A dataframe with eFG% in it
+    """
+    ## add eFG%
+    new_eFG_col = round(((df["FG"] + (0.5 * df["3P"]))/df["FGA"]) * 100, 1)
+    loc_2P = df.columns.get_loc('2P%')
+    try:
+        df.insert(loc=loc_2P + 1, column='eFG%', value=new_eFG_col)
+    except ValueError:
+        df["eFG%"] = new_eFG_col
+        
+    return df
