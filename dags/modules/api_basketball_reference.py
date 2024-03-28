@@ -198,3 +198,26 @@ def _add_lineup_pos(df):
     df.loc[5:, 'GS'] = 0
 
     return df
+
+def _add_2s_col(df):
+    """
+    Add 2-point-made(2PM) 2-point-attempt(2PA) and 2-point-percentage(2P%) to dataframe
+
+    :param df: dataframe that want to be added
+    :return: A dataframe with 2PM 2PA and 2P% in it
+    """
+    ## add 2P 2PA and 2P%
+    new_2P_col = df["FG"] - df["3P"]
+    new_2PA_col = df["FGA"] - df["3PA"]
+    new_2PP_col = round(((new_2P_col/new_2PA_col) * 100), 1)
+    loc_3P = df.columns.get_loc('3P%')
+    try:
+        df.insert(loc=loc_3P + 1, column='2P', value=new_2P_col)
+        df.insert(loc=loc_3P + 2, column='2PA', value=new_2PA_col)
+        df.insert(loc=loc_3P + 3, column='2P%', value=new_2PP_col)
+    except ValueError:
+        df["2P"] = new_2P_col
+        df["2PA"] = new_2PA_col
+        df["2P%"] = new_2PP_col
+    
+    return df
