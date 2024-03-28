@@ -83,3 +83,219 @@ def _get_box_score_list():
         box_score_list.append(link.get('href'))
 
     return box_score_list
+
+def _proper_table(df):
+    """
+    Drop unnecessary multi-index, rows, and change column name Starters to Player
+
+    :param df: dataframe that want to be transformed with dropping unnecessarry multi-index, rows, and changing column name 'Starters' to 'Player'
+    :return: A transformed dataframe
+    """
+    # drop Basic Box Score Stats index
+    df = df.droplevel(0, axis=1) 
+    # rename the Starters column to Player column
+    df.rename(columns = {'Starters':'Player'}, inplace = True)
+    # you can use a method to drop Reserves row and Team Totals row instead of split
+    df.drop(len(df)-1, axis=0, inplace=True)
+    df.drop(5, inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    # drop the DNP players
+    df.drop(df[df['MP'] == 'Did Not Play'].index, inplace=True)
+
+    return df
+
+def _convert_dtypes(df):
+    """
+    convert column data types to the right data types
+
+    :param df: dataframe that want to be converted
+    :return: A right converted data types dataframe
+    """
+    # extract MP column to the right value
+    minute_played = df["MP"].apply(lambda x: int(x.split(':')[0]))
+    second_played = df["MP"].apply(lambda x: int(x.split(':')[1]))
+    df["MP"] = minute_played + round(second_played/60, 1)
+    # convert each column to corresponding data types
+    convert_dict = {'FG': int,
+                    'FGA': int,
+                    'FG%': float,
+                    '3P': int,
+                    '3PA': int,
+                    '3P%': float,
+                    'FT': int,
+                    'FTA': int,
+                    'FT%': float,
+                    'ORB': int,
+                    'DRB': int,
+                    'TRB': int,
+                    'AST': int,
+                    'STL': int,
+                    'BLK': int,
+                    'TOV': int,
+                    'PF': int,
+                    'PTS': int,
+                    }
+    df = df.astype(convert_dict)
+
+    # multiply % columns by 100 to get right value
+    df["FG%"] = df["FG%"] * 100
+    df["3P%"] = df["3P%"] * 100
+    df["FT%"] = df["FT%"] * 100
+
+    return df
+
+def _add_match_date_col(df, date_now):
+    """
+    Add match day date to dataframe
+
+    :param df: dataframe that want to be added
+    :return: A dataframe with match day date in it
+    """
+    new_matchdate_col = date_now
+    loc_player = df.columns.get_loc('Player')
+    try:
+        df.insert(loc=loc_player + 1, column='Date', value=new_matchdate_col)
+    except ValueError:
+        df["Date"] = new_matchdate_col
+
+    return df
+
+def _add_team_name_col(df, team_index):
+    """
+    Add team name to dataframe
+
+    :param df: dataframe that want to be added
+    :param team_index: a team index to get a team name
+    :return: A dataframe with team name in it
+    """
+    ## add team name
+    team_caption = team_match_table[team_index].find_all('caption')[0]
+    team_name = team_caption.string
+    new_team_col = team_name.split('Basic')[0].strip()
+    loc_date = df.columns.get_loc('Date')
+    try:
+        df.insert(loc=loc_date + 1, column='Tm', value=new_team_col)
+    except ValueError:
+        df['Tm'] = new_team_col
+
+    return df
+
+def _add_lineup_pos(df):
+    """
+    Add lineup position to dataframe to determine whether the player is a starter or not
+
+    :param df: dataframe that want to be added
+    :return: A dataframe with Game and Game Started in it
+    """
+    ## add lineup_pos
+    loc_team = df.columns.get_loc('Tm')
+    try:
+        df.insert(loc=loc_team + 1, column='G', value=1)
+        df.insert(loc=loc_team + 2, column='GS', value=1)
+    except ValueError:
+        df['G'] = 1
+        df['GS'] = 1
+    df.loc[5:, 'GS'] = 0
+
+    return df
+
+def _add_2s_col(df):
+    """
+    Add 2-point-made(2PM) 2-point-attempt(2PA) and 2-point-percentage(2P%) to dataframe
+
+    :param df: dataframe that want to be added
+    :return: A dataframe with 2PM 2PA and 2P% in it
+    """
+    ## add 2P 2PA and 2P%
+    new_2P_col = df["FG"] - df["3P"]
+    new_2PA_col = df["FGA"] - df["3PA"]
+    new_2PP_col = round(((new_2P_col/new_2PA_col) * 100), 1)
+    loc_3P = df.columns.get_loc('3P%')
+    try:
+        df.insert(loc=loc_3P + 1, column='2P', value=new_2P_col)
+        df.insert(loc=loc_3P + 2, column='2PA', value=new_2PA_col)
+        df.insert(loc=loc_3P + 3, column='2P%', value=new_2PP_col)
+    except ValueError:
+        df["2P"] = new_2P_col
+        df["2PA"] = new_2PA_col
+        df["2P%"] = new_2PP_col
+    
+    return df
+
+def _add_eFG_col(df):
+    """
+    Add effective field goals percentage (eFG%) to dataframe
+
+    :param df: dataframe that want to be added
+    :return: A dataframe with eFG% in it
+    """
+    ## add eFG%
+    new_eFG_col = round(((df["FG"] + (0.5 * df["3P"]))/df["FGA"]) * 100, 1)
+    loc_2P = df.columns.get_loc('2P%')
+    try:
+        df.insert(loc=loc_2P + 1, column='eFG%', value=new_eFG_col)
+    except ValueError:
+        df["eFG%"] = new_eFG_col
+        
+    return df
+
+def _extract_PM_col(df):
+    """
+    Extract "+/-" column into seperate columns PLUS and MINUS to dataframe
+
+    :param df: dataframe that want to be added
+    :return: A dataframe with PLUS and MINUS column in it
+    """
+    # extract +/- column to separate column named PLUS and MINUS then drop the original column (+/- column)
+    loc_PF = df.columns.get_loc('PF')
+    new_PLUS_col = df["+/-"].apply(lambda x: int(x[1:]) if x[0] == "+" else 0)
+    new_MINUS_col = df["+/-"].apply(lambda x: int(x[1:]) if x[0] == "-" else 0)
+    try:
+        df.insert(loc=loc_PF + 1, column='PLUS', value=new_PLUS_col)
+        df.insert(loc=loc_PF + 2, column='MINUS', value=new_MINUS_col)
+    except ValueError:
+        df["PLUS"] = df["+/-"].apply(lambda x: int(x[1:]) if x[0] == "+" else 0)
+        df["MINUS"]  = df["+/-"].apply(lambda x: int(x[1:]) if x[0] == "-" else 0)
+    df = df.drop(columns=['+/-'])
+
+    return df
+
+def clean_data(df, date_now, team_index):
+    """
+    A combination of function that to clean data in dataframe
+
+    :param df: dataframe that want to be cleaned
+    :param datenow: a match day date in Eastern Time
+    :param team_index: a team index to get a team name
+    :return: A cleaned dataframe
+    """
+    # data cleaning helper function
+    df_proper_table = _proper_table(df)
+
+    # Data cleaning home_starters
+    # extract MP column to the right value
+    df_right_dtypes = _convert_dtypes(df_proper_table)
+
+    # Add supporting columns
+    ## add match day date
+    df_date_col = _add_match_date_col(df_right_dtypes, date_now)
+
+    ## add team name
+    df_team_col = _add_team_name_col(df_date_col, team_index)
+
+    ## add lineup_pos
+    df_lineup_pos_col  = _add_lineup_pos(df_team_col)
+
+    ## add 2P 2PA and 2P%
+    df_2s_col = _add_2s_col(df_lineup_pos_col)
+
+    ## add eFG%
+    df_eFG_col = _add_eFG_col(df_2s_col)
+
+    ## extract +/- column to separate column named PLUS and MINUS then drop the original column (+/- column)
+    df_PM_col = _extract_PM_col(df_eFG_col)
+
+    # fill NaN with 0.0
+    df = df_PM_col.fillna(0.0)
+
+    return df
