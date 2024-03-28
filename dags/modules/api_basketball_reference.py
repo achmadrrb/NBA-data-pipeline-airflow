@@ -83,3 +83,23 @@ def _get_box_score_list():
         box_score_list.append(link.get('href'))
 
     return box_score_list
+
+def _proper_table(df):
+    """
+    Drop unnecessary multi-index, rows, and change column name Starters to Player
+
+    :param df: dataframe that want to be transformed with dropping unnecessarry multi-index, rows, and changing column name 'Starters' to 'Player'
+    :return: A transformed dataframe
+    """
+    # drop Basic Box Score Stats index
+    df = df.droplevel(0, axis=1) 
+    # rename the Starters column to Player column
+    df.rename(columns = {'Starters':'Player'}, inplace = True)
+    # you can use a method to drop Reserves row and Team Totals row instead of split
+    df.drop(len(df)-1, axis=0, inplace=True)
+    df.drop(5, inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    # drop the DNP players
+    df.drop(df[df['MP'] == 'Did Not Play'].index, inplace=True)
+
+    return df
