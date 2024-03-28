@@ -103,3 +103,43 @@ def _proper_table(df):
     df.drop(df[df['MP'] == 'Did Not Play'].index, inplace=True)
 
     return df
+
+def _convert_dtypes(df):
+    """
+    convert column data types to the right data types
+
+    :param df: dataframe that want to be converted
+    :return: A right converted data types dataframe
+    """
+    # extract MP column to the right value
+    minute_played = df["MP"].apply(lambda x: int(x.split(':')[0]))
+    second_played = df["MP"].apply(lambda x: int(x.split(':')[1]))
+    df["MP"] = minute_played + round(second_played/60, 1)
+    # convert each column to corresponding data types
+    convert_dict = {'FG': int,
+                    'FGA': int,
+                    'FG%': float,
+                    '3P': int,
+                    '3PA': int,
+                    '3P%': float,
+                    'FT': int,
+                    'FTA': int,
+                    'FT%': float,
+                    'ORB': int,
+                    'DRB': int,
+                    'TRB': int,
+                    'AST': int,
+                    'STL': int,
+                    'BLK': int,
+                    'TOV': int,
+                    'PF': int,
+                    'PTS': int,
+                    }
+    df = df.astype(convert_dict)
+
+    # multiply % columns by 100 to get right value
+    df["FG%"] = df["FG%"] * 100
+    df["3P%"] = df["3P%"] * 100
+    df["FT%"] = df["FT%"] * 100
+
+    return df
