@@ -143,3 +143,19 @@ def _convert_dtypes(df):
     df["FT%"] = df["FT%"] * 100
 
     return df
+
+def _add_match_date_col(df, date_now):
+    """
+    Add match day date to dataframe
+
+    :param df: dataframe that want to be added
+    :return: A dataframe with match day date in it
+    """
+    new_matchdate_col = date_now
+    loc_player = df.columns.get_loc('Player')
+    try:
+        df.insert(loc=loc_player + 1, column='Date', value=new_matchdate_col)
+    except ValueError:
+        df["Date"] = new_matchdate_col
+
+    return df
