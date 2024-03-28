@@ -238,3 +238,24 @@ def _add_eFG_col(df):
         df["eFG%"] = new_eFG_col
         
     return df
+
+def _extract_PM_col(df):
+    """
+    Extract "+/-" column into seperate columns PLUS and MINUS to dataframe
+
+    :param df: dataframe that want to be added
+    :return: A dataframe with PLUS and MINUS column in it
+    """
+    # extract +/- column to separate column named PLUS and MINUS then drop the original column (+/- column)
+    loc_PF = df.columns.get_loc('PF')
+    new_PLUS_col = df["+/-"].apply(lambda x: int(x[1:]) if x[0] == "+" else 0)
+    new_MINUS_col = df["+/-"].apply(lambda x: int(x[1:]) if x[0] == "-" else 0)
+    try:
+        df.insert(loc=loc_PF + 1, column='PLUS', value=new_PLUS_col)
+        df.insert(loc=loc_PF + 2, column='MINUS', value=new_MINUS_col)
+    except ValueError:
+        df["PLUS"] = df["+/-"].apply(lambda x: int(x[1:]) if x[0] == "+" else 0)
+        df["MINUS"]  = df["+/-"].apply(lambda x: int(x[1:]) if x[0] == "-" else 0)
+    df = df.drop(columns=['+/-'])
+
+    return df
