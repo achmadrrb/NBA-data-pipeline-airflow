@@ -299,3 +299,47 @@ def clean_data(df, date_now, team_index):
     df = df_PM_col.fillna(0.0)
 
     return df
+
+def scrape_and_clean():
+    """
+    A combination of match day box score results
+
+    :return: A combined dataframe of match day
+    """
+    box_score_list = _get_box_score_list()
+
+    # Convert the UTC date to the Eastern Time Zone
+    date_now = _parse_date_now()
+
+    # to get the boxscore for each team in a match
+    basketball_reference_web = "https://www.basketball-reference.com"
+
+    combined_df_all = pd.DataFrame()
+
+    for box_score in box_score_list:
+        box_score_match_url = basketball_reference_web + box_score
+        driver = webdriver.Chrome()
+        driver.get(box_score_match_url)
+        driver.execute_script("window.scrollTo(1,10000)")
+        time.sleep(2)
+
+        page = driver.page_source
+        soup = BeautifulSoup(page, 'html.parser')
+        team_match_table = soup.find_all("table", attrs="sortable stats_table now_sortable")
+
+        away_index = 0
+        home_index = 2
+        away_team_table = pd.read_html(str(team_match_table))[away_index]
+        home_team_table = pd.read_html(str(team_match_table))[home_index]
+
+        # Using clean_data helper function
+        away_team = clean_data(away_team_table, date_now, away_index)
+        home_team = clean_data(home_team_table, date_now, home_index)
+
+        # Combine them
+        combined_df_match = pd.concat([away_team, home_team])
+        combined_df_match.reset_index(drop=True, inplace=True)
+
+        combined_df_all = combined_df_all.append(combined_df_match)
+
+    return combined_df_all
