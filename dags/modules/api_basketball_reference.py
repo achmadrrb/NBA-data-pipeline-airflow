@@ -160,7 +160,7 @@ def _add_match_date_col(df, date_now):
 
     return df
 
-def _add_team_name_col(df, team_index):
+def _add_team_name_col(df, team_match_table, team_index):
     """
     Add team name to dataframe
 
@@ -260,7 +260,7 @@ def _extract_PM_col(df):
 
     return df
 
-def clean_data(df, date_now, team_index):
+def clean_data(df, team_match_table, date_now, team_index):
     """
     A combination of function that to clean data in dataframe
 
@@ -281,7 +281,7 @@ def clean_data(df, date_now, team_index):
     df_date_col = _add_match_date_col(df_right_dtypes, date_now)
 
     ## add team name
-    df_team_col = _add_team_name_col(df_date_col, team_index)
+    df_team_col = _add_team_name_col(df_date_col, team_match_table, team_index)
 
     ## add lineup_pos
     df_lineup_pos_col  = _add_lineup_pos(df_team_col)
@@ -333,8 +333,8 @@ def scrape_and_clean():
         home_team_table = pd.read_html(str(team_match_table))[home_index]
 
         # Using clean_data helper function
-        away_team = clean_data(away_team_table, date_now, away_index)
-        home_team = clean_data(home_team_table, date_now, home_index)
+        away_team = clean_data(away_team_table, team_match_table, date_now, away_index)
+        home_team = clean_data(home_team_table, team_match_table, date_now, home_index)
 
         # Combine them
         combined_df_match = pd.concat([away_team, home_team])
