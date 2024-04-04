@@ -12,7 +12,6 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime
 import pytz
-import json
 
 def _parse_date_now(tzone='US/Eastern'):
     """
@@ -52,16 +51,11 @@ def _convert_date_to_str(date_now):
 
     return month_now, day_now, year_now
 
-def _write_variable_to_json(variable_name, variable_value, file_path):
-    data = {variable_name: variable_value}
-    with open(file_path, 'w') as file:
-        json.dump(data, file, indent=4)
-
 def _get_box_score_list():
     """
-    Get a box score list in a match day and store it in JSON file.
+    Get a box score list in a match day.
 
-    :return: None
+    :return: A list of html address of box score in a match day
     """
 
     # Convert the UTC date to the Eastern Time Zone
@@ -87,10 +81,8 @@ def _get_box_score_list():
     box_score_list = []
     for link in box_score_link:
         box_score_list.append(link.get('href'))
-    
-    _write_variable_to_json("box_score_list", box_score_list, "boxscore/box_score_list.json")
 
-    return 
+    return box_score_list
 
 def _proper_table(df):
     """
