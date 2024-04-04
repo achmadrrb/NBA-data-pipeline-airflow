@@ -101,6 +101,8 @@ def _proper_table(df):
     df.reset_index(drop=True, inplace=True)
     # drop the DNP players
     df.drop(df[df['MP'] == 'Did Not Play'].index, inplace=True)
+    df.drop(df[df['MP'] == 'Did Not Dress'].index, inplace=True)
+    df.drop(df[df['MP'] == 'Not With Team'].index, inplace=True)
 
     return df
 
