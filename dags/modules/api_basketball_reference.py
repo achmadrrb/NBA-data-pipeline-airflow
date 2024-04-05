@@ -10,30 +10,34 @@ from selenium import webdriver
 import time
 from bs4 import BeautifulSoup
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
 import pytz
 
-def _parse_date_now(tzone='US/Eastern'):
+def parse_date(date_previous=None):
     """
     Parse default date now in Eastern Time. Basketball reference website is using US/Eastern timezone
 
-    :param tzone: target timezone. The default is 'US/Eastern'.
+    :param date_previous: target date. This paramater is for specifying previous match date that want to be parsed.
+                          The match date is in Eastern Time (based on NBA schedule). Format date (str) : YYYYMMDD or YYYY-MM-DD
     :return: a date as now in Eastern Time.
     """
 
-    # Create a timezone-aware object for UTC
-    utc_timezone = pytz.utc
+    if date_previous == None:
+        # Create a timezone-aware object for UTC
+        utc_timezone = pytz.utc
 
-    # Get the current date and time in UTC using timezone-aware objects
-    utc_now = datetime.now(tz=utc_timezone)
+        # Get the current date and time in UTC using timezone-aware objects
+        utc_now = datetime.now(tz=utc_timezone)
 
-    # Specify the target timezone as Eastern Time Zone (ET)
-    target_timezone = pytz.timezone(tzone)
+        # Specify the target timezone as Eastern Time Zone (ET)
+        target_timezone = pytz.timezone('US/Eastern')
 
-    # Convert the UTC date to the Eastern Time Zone
-    date_now = utc_now.astimezone(target_timezone).date()
+        # Convert the UTC date to the Eastern Time Zone
+        match_date = utc_now.astimezone(target_timezone).date()
+    else: 
+        match_date = date.fromisoformat(date_previous)
 
-    return date_now
+    return match_date
 
 def _convert_date_to_str(date_now):
     """
@@ -51,15 +55,17 @@ def _convert_date_to_str(date_now):
 
     return month_now, day_now, year_now
 
-def _get_box_score_list():
+def _get_box_score_list(date_previous=None):
     """
     Get a box score list in a match day.
-
+    
+    :param date_previous: target date. This paramater is for specifying previous match date that want to be parsed.
+                          The match date is in Eastern Time (based on NBA schedule). Format date (str) : YYYYMMDD or YYYY-MM-DD
     :return: A list of html address of box score in a match day
     """
 
     # Convert the UTC date to the Eastern Time Zone
-    date_now = _parse_date_now()
+    date_now = parse_date(date_previous)
 
     # Convert the Eastern Time Zone to month, day, and year
     month_now, day_now, year_now = _convert_date_to_str(date_now)
@@ -311,7 +317,7 @@ def scrape_and_clean():
     box_score_list = _get_box_score_list()
 
     # Convert the UTC date to the Eastern Time Zone
-    date_now = _parse_date_now()
+    date_now = _parse_date()
 
     # to get the boxscore for each team in a match
     basketball_reference_web = "https://www.basketball-reference.com"
