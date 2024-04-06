@@ -10,7 +10,7 @@ import time
 from datetime import datetime, timedelta
 import pandas as pd
 from numpy.random import choice
-from config import config  # contains secret keys in config.py
+from configs import config 
 from google.cloud import bigquery
 from selenium import webdriver
 import airflow
