@@ -1,8 +1,8 @@
 .env
 config.py
 *.ini
-dags/config/*
-!dags/config/.gitkeep
+configs/*
+!configs/.gitkeep
 logs/*
 !logs/.gitkeep
 __pycache__/
