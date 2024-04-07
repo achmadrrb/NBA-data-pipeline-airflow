@@ -8,6 +8,6 @@ logs/*
 __pycache__/
 token.json
 client_secret.json
-nba_pipeline_service_acount.json
+nba-pipeline-service-account.json
 google_oauth.py
 .DS_Store
