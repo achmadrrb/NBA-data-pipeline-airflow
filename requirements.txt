@@ -9,5 +9,6 @@ google-api-python-client
 google-auth-oauthlib
 google-auth-httplib2
 pandas-gbq
-# from selenium import webdriver
-# from bs4 import BeautifulSoup
+selenium
+beautifulsoup4
+pytz
