@@ -10,7 +10,7 @@ import time
 from datetime import datetime, timedelta
 import pandas as pd
 from numpy.random import choice
-from config import config 
+from config.config import Config 
 from google.cloud import bigquery
 from selenium import webdriver
 import airflow
@@ -49,7 +49,7 @@ dag = DAG(
     description='Call basketball-reference API and insert results into Bigquery',
     default_args=default_args, 
     # schedule='0 12 * * *',
-    schedule='@once',
+    schedule_interval='@once',
     catchup=False,
     tags=['data-pipeline-dag'],
     max_active_tasks = 3
@@ -132,7 +132,7 @@ with dag:
             combined_df_all = pd.concat([combined_df_all, combined_df_match])
             combined_df_all.reset_index(drop=True, inplace=True)
 
-        table_id = config.table_id
+        table_id = Config.table_id
         client = bigquery.Client()
         upload = client.load_table_from_dataframe(combined_df_all, table_id)
 
