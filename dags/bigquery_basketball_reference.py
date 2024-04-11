@@ -13,6 +13,8 @@ from numpy.random import choice
 from config import Config 
 from google.cloud import bigquery
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 import airflow
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
@@ -74,7 +76,15 @@ with dag:
 
         for box_score in box_score_link:
             box_score_match_url = basketball_reference_web + box_score
-            driver = webdriver.Chrome()
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")  # Enable headless mode
+            chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
+            chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid /dev/shm usage
+            # Path to the Chrome WebDriver executable
+            chrome_driver_path = '/usr/lib/chromium-browser/chromedriver'
+            service = Service(executable_path=chrome_driver_path)
+
+            driver = webdriver.Chrome(service=service, options=chrome_options)
             driver.get(box_score_match_url)
             driver.execute_script("window.scrollTo(1,10000)")
             time.sleep(2)
@@ -82,7 +92,7 @@ with dag:
             page = driver.page_source
             soup = BeautifulSoup(page, 'html.parser')
 
-            with open("/boxscore/{}".format(box_score.split('/')[2]), "w") as file:
+            with open("/modules/boxscore/{}".format(box_score.split('/')[2]), "w") as file:
                 file.write(str(soup))
 
         return
