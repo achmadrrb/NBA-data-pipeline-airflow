@@ -81,11 +81,8 @@ def get_box_score_list(date_previous=None):
     chrome_options.add_argument("--headless")  # Enable headless mode
     chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
     chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid /dev/shm usage
-    # Path to the Chrome WebDriver executable
-    chrome_driver_path = '/usr/lib/chromium-browser/chromedriver'
-    service = Service(executable_path=chrome_driver_path)
 
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver = webdriver.Chrome(options=chrome_options)
     driver.get(url)
     driver.execute_script("window.scrollTo(1,10000)")
     time.sleep(2)
