@@ -2,6 +2,7 @@ FROM apache/airflow:2.8.3
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
+USER root
 # install google chrome
 RUN apt-get -y update
 RUN apt-get install -y wget
@@ -17,3 +18,5 @@ RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
 
 # set display port to avoid crash
 ENV DISPLAY=:99
+
+USER 1001
