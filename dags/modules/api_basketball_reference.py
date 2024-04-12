@@ -7,7 +7,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning) # stop getting Pandas FutureWarning's
 
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 import time
 from bs4 import BeautifulSoup
@@ -85,7 +85,7 @@ def get_box_score_list(date_previous=None):
     chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
     chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid /dev/shm usage
 
-    driver = webdriver.Chrome(executable_path=chrome_driver_path, options=chrome_options)
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
     driver.get(url)
     driver.execute_script("window.scrollTo(1,10000)")
     time.sleep(2)

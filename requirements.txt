@@ -12,3 +12,4 @@ pandas-gbq
 selenium
 beautifulsoup4
 pytz
+webdriver-manager
