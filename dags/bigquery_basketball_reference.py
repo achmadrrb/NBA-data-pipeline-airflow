@@ -81,13 +81,12 @@ with dag:
             chrome_driver_path = '/usr/local/bin/chromedriver' 
 
             # Initialize Chrome Service with Chromedriver path
-            chrome_service = Service(executable_path=chrome_driver_path)
             chrome_options = Options()
             chrome_options.add_argument("--headless")  # Enable headless mode
             chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
             chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid /dev/shm usage
 
-            driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+            driver = webdriver.Chrome(executable_path=chrome_driver_path, options=chrome_options)
             driver.get(box_score_match_url)
             driver.execute_script("window.scrollTo(1,10000)")
             time.sleep(2)
