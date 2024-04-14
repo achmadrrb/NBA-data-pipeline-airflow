@@ -74,6 +74,9 @@ with dag:
 
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
+            permissions = 0o777
+            # Change the file permissions
+            os.chmod(folder_path, permissions)
 
         for box_score in box_score_link:
             box_score_match_url = basketball_reference_web + box_score
