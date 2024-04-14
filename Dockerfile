@@ -17,6 +17,7 @@ RUN wget -O /tmp/chromedriver.zip http://chromedriver.storage.googleapis.com/`cu
 RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
 
 # Set permissions to allow writing and reading
+RUN mkdir /usr/local/airflow/dags
 RUN chmod 777 /usr/local/airflow/dags
 
 # set display port to avoid crash
