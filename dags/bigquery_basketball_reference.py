@@ -64,40 +64,6 @@ with dag:
         task_id='start',
         dag=dag)
 
-    # function for scraping box score html using box_score_link and storing in local dags/modules/boxscore
-    def _box_score_html():
-
-        basketball_reference_web = "https://www.basketball-reference.com"
-        box_score_link = get_box_score_list(date_previous='2024-04-03')
-
-        for box_score in box_score_link:
-            box_score_match_url = basketball_reference_web + box_score
-
-            # Initialize Chrome Service with Chromedriver path
-            chrome_options = Options()
-            chrome_options.add_argument("--headless")  # Enable headless mode
-            chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
-            chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid /dev/shm usage
-
-            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-            driver.get(box_score_match_url)
-            driver.execute_script("window.scrollTo(1,10000)")
-            time.sleep(2)
-
-            page = driver.page_source
-            soup = BeautifulSoup(page, 'html.parser')
-
-            with open("/modules/boxscore/{}".format(box_score.split('/')[2]), "w") as file:
-                file.write(str(soup))
-
-        return
-
-    box_score_html = PythonOperator(
-        task_id='box_score_list',
-        provide_context=True,
-        python_callable=_box_score_html
-    )
-
     # function for calling api_basketball_reference and insert results into BigQuery
     def _player_daily_results():
         date_now = parse_date(date_previous='2024-04-03')
