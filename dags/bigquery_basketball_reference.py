@@ -70,19 +70,8 @@ with dag:
         basketball_reference_web = "https://www.basketball-reference.com"
         box_score_link = get_box_score_list(date_previous='2024-04-03')
 
-        folder_path = '/modules/boxscore'
-
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-            permissions = 0o777
-            # Change the file permissions
-            os.chmod(folder_path, permissions)
-
         for box_score in box_score_link:
             box_score_match_url = basketball_reference_web + box_score
-            
-            # Specify Chromedriver path
-            chrome_driver_path = '/usr/local/bin/chromedriver' 
 
             # Initialize Chrome Service with Chromedriver path
             chrome_options = Options()
@@ -116,12 +105,23 @@ with dag:
         # Create Null DataFrame for storing combined DataFrame
         combined_df_all = pd.DataFrame()
 
-        folder_path = '/modules/boxscore'
-        for filename in glob.glob(os.path.join(folder_path, '*.html')):
-            with open(filename, 'r') as file:
-                # Process the file here
-                 page = file.read()
+        basketball_reference_web = "https://www.basketball-reference.com"
+        box_score_link = get_box_score_list(date_previous='2024-04-03')
 
+        for box_score in box_score_link:
+            box_score_match_url = basketball_reference_web + box_score
+            # Initialize Chrome Service with Chromedriver path
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")  # Enable headless mode
+            chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
+            chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid /dev/shm usage
+
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+            driver.get(box_score_match_url)
+            driver.execute_script("window.scrollTo(1,10000)")
+            time.sleep(2)
+
+            page = driver.page_source
             soup = BeautifulSoup(page, 'html.parser')
             team_match_table = soup.find_all("table", attrs="sortable stats_table now_sortable")
             away_index = 0
@@ -130,7 +130,7 @@ with dag:
                 away_team_table = pd.read_html(str(team_match_table))[away_index]
                 home_team_table = pd.read_html(str(team_match_table))[home_index]
             except IndexError:
-                print("IndexError on this html: ", filename)
+                print("IndexError on this html: ", box_score)
                 break
 
             # Using clean_data helper function
@@ -138,7 +138,7 @@ with dag:
                 away_team = clean_data(away_team_table, team_match_table, date_now, away_index)
                 home_team = clean_data(home_team_table, team_match_table, date_now, home_index)
             except ValueError:
-                print("ValueError on this html: ", filename)
+                print("ValueError on this html: ", box_score)
                 break
 
             # Combine them
@@ -164,7 +164,7 @@ with dag:
         task_id='finish',
         dag=dag)
     
-    start >> box_score_html >> player_daily_results >> finish
+    start >> player_daily_results >> finish
 
 
     
