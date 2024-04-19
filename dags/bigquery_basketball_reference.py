@@ -51,8 +51,7 @@ dag = DAG(
     'basketball-reference_bigquery', 
     description='Call basketball-reference API and insert results into Bigquery',
     default_args=default_args, 
-    # schedule='0 12 * * *',
-    schedule_interval='@once',
+    schedule_interval='0 13 * * *',
     catchup=False,
     tags=['data-pipeline-dag'],
     max_active_tasks = 3
@@ -66,13 +65,15 @@ with dag:
 
     # function for calling api_basketball_reference and insert results into BigQuery
     def _player_daily_results():
-        date_now = parse_date(date_previous='2024-04-03')
+        date_now = parse_date()
 
         # Create Null DataFrame for storing combined DataFrame
         combined_df_all = pd.DataFrame()
 
         basketball_reference_web = "https://www.basketball-reference.com"
-        box_score_link = get_box_score_list(date_previous='2024-04-03')
+        box_score_link = get_box_score_list()
+        if len(box_score_link) == 0:
+            return
 
         for box_score in box_score_link:
             box_score_match_url = basketball_reference_web + box_score
