@@ -13,7 +13,7 @@ from selenium.webdriver.chrome.options import Options
 import time
 from bs4 import BeautifulSoup
 import pandas as pd
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import pytz
 
 def parse_date(date_previous=None):
@@ -36,7 +36,7 @@ def parse_date(date_previous=None):
         target_timezone = pytz.timezone('US/Eastern')
 
         # Convert the UTC date to the Eastern Time Zone
-        match_date = utc_now.astimezone(target_timezone).date()
+        match_date = utc_now.astimezone(target_timezone).date() - timedelta(days=1)
     else: 
         match_date = date.fromisoformat(date_previous)
 
