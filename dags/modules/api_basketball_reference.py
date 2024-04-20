@@ -32,11 +32,8 @@ def parse_date(date_previous=None):
         # Get the current date and time in UTC using timezone-aware objects
         utc_now = datetime.now(tz=utc_timezone)
 
-        # Specify the target timezone as Eastern Time Zone (ET)
-        target_timezone = pytz.timezone('US/Eastern')
-
         # Convert the UTC date to the Eastern Time Zone
-        match_date = utc_now.astimezone(target_timezone).date() - timedelta(days=1)
+        match_date = utc_now.date()
     else: 
         match_date = date.fromisoformat(date_previous)
 
