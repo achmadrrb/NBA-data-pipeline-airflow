@@ -51,7 +51,7 @@ dag = DAG(
     'basketball-reference_bigquery', 
     description='Call basketball-reference API and insert results into Bigquery',
     default_args=default_args, 
-    schedule_interval='0 1 * * *',
+    schedule_interval='0 13 * * *',
     catchup=False,
     tags=['data-pipeline-dag'],
     max_active_tasks = 3
