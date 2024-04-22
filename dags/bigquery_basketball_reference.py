@@ -65,13 +65,13 @@ with dag:
 
     # function for calling api_basketball_reference and insert results into BigQuery
     def _player_daily_results():
-        date_now = parse_date()
+        date_now = parse_date(date_previous=START_DATE)
 
         # Create Null DataFrame for storing combined DataFrame
         combined_df_all = pd.DataFrame()
 
         basketball_reference_web = "https://www.basketball-reference.com"
-        box_score_link = get_box_score_list()
+        box_score_link = get_box_score_list(date_previous=START_DATE)
         if len(box_score_link) == 0:
             return
 
