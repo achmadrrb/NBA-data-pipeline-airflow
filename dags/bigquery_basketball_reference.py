@@ -65,13 +65,14 @@ with dag:
 
     # function for calling api_basketball_reference and insert results into BigQuery
     def _player_daily_results():
-        date_now = parse_date(date_previous=START_DATE)
+        today = parse_date()
+        matchday_date = today - timedelta(days=1)
 
         # Create Null DataFrame for storing combined DataFrame
         combined_df_all = pd.DataFrame()
 
         basketball_reference_web = "https://www.basketball-reference.com"
-        box_score_link = get_box_score_list(date_previous=START_DATE)
+        box_score_link = get_box_score_list()
         if len(box_score_link) == 0:
             return
 
@@ -102,8 +103,8 @@ with dag:
 
             # Using clean_data helper function
             try:
-                away_team = clean_data(away_team_table, team_match_table, date_now, away_index)
-                home_team = clean_data(home_team_table, team_match_table, date_now, home_index)
+                away_team = clean_data(away_team_table, team_match_table, matchday_date, away_index)
+                home_team = clean_data(home_team_table, team_match_table, matchday_date, home_index)
             except ValueError:
                 print("ValueError on this html: ", box_score)
                 break
