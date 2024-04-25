@@ -16,16 +16,16 @@ import pandas as pd
 from datetime import datetime, date, timedelta
 import pytz
 
-def parse_date(date_previous=None):
+def parse_date(target_date=None):
     """
     Parse default date now in Eastern Time. Basketball reference website is using US/Eastern timezone
 
-    :param date_previous: target date. This paramater is for specifying previous match date that want to be parsed.
+    :param target_date: target date. This paramater is for specifying previous match date that want to be parsed.
                           The match date is in Eastern Time (based on NBA schedule). Format date (str) : YYYYMMDD or YYYY-MM-DD
     :return: a date as now in Eastern Time.
     """
 
-    if date_previous == None:
+    if target_date == None:
         # Create a timezone-aware object for UTC
         utc_timezone = pytz.utc
 
@@ -35,7 +35,7 @@ def parse_date(date_previous=None):
         # Convert the UTC date to the Eastern Time Zone
         match_date = utc_now.date()
     else: 
-        match_date = date.fromisoformat(date_previous)
+        match_date = date.fromisoformat(target_date)
 
     return match_date
 
@@ -55,17 +55,17 @@ def _convert_date_to_str(date_now):
 
     return month_now, day_now, year_now
 
-def get_box_score_list(date_previous=None):
+def get_box_score_list(target_date=None):
     """
     Get a box score list in a match day.
 
-    :param date_previous: target date. This paramater is for specifying previous match date that want to be parsed.
+    :param target_date: target date. This paramater is for specifying previous match date that want to be parsed.
                           The match date is in Eastern Time (based on NBA schedule). Format date (str) : YYYYMMDD or YYYY-MM-DD
     :return: A list of html address of box score in a match day
     """
 
     # Convert the UTC date to the Eastern Time Zone
-    date_now = parse_date(date_previous)
+    date_now = parse_date(target_date)
 
     # Convert the Eastern Time Zone to month, day, and year
     month_now, day_now, year_now = _convert_date_to_str(date_now)
