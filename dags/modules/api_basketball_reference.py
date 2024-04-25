@@ -39,19 +39,19 @@ def parse_date(target_date=None):
 
     return match_date
 
-def _convert_date_to_str(date_now):
+def _convert_date_to_str(target_date):
     """
     Convert date to string; month, day, and year
 
-    :param date_now: a date as now.
+    :param target_date: a date as now.
     :return: month, day, and year as US format MMDDYYYY
     """
     # Convert the Eastern Time Zone to month, day, and year
-    month_now = date_now.strftime("%m")
+    month_now = target_date.strftime("%m")
     if month_now[0] == "0":
         month_now = month_now[1]
-    day_now = date_now.strftime("%d")
-    year_now = date_now.strftime("%Y")
+    day_now = target_date.strftime("%d")
+    year_now = target_date.strftime("%Y")
 
     return month_now, day_now, year_now
 
@@ -65,10 +65,11 @@ def get_box_score_list(target_date=None):
     """
 
     # Convert the UTC date to the Eastern Time Zone
-    date_now = parse_date(target_date)
+    today = parse_date(target_date)
+    matchday_date = today - timedelta(days=1)
 
     # Convert the Eastern Time Zone to month, day, and year
-    month_now, day_now, year_now = _convert_date_to_str(date_now)
+    month_now, day_now, year_now = _convert_date_to_str(matchday_date)
 
     # Combine month, day and year to the url
     day_match_url = "https://www.basketball-reference.com/boxscores/index.fcgi?month={month}&day={day}&year={year}"
@@ -157,14 +158,14 @@ def _convert_dtypes(df):
 
     return df
 
-def _add_match_date_col(df, date_now):
+def _add_match_date_col(df, target_date):
     """
     Add match day date to dataframe
 
     :param df: dataframe that want to be added
     :return: A dataframe with match day date in it
     """
-    new_matchdate_col = date_now
+    new_matchdate_col = target_date
     loc_player = df.columns.get_loc('Player')
     try:
         df.insert(loc=loc_player + 1, column='Date', value=new_matchdate_col)
@@ -273,7 +274,7 @@ def _extract_PM_col(df):
 
     return df
 
-def clean_data(df, team_match_table, date_now, team_index):
+def clean_data(df, team_match_table, target_date, team_index):
     """
     A combination of function that to clean data in dataframe
 
@@ -291,7 +292,7 @@ def clean_data(df, team_match_table, date_now, team_index):
 
     # Add supporting columns
     ## add match day date
-    df_date_col = _add_match_date_col(df_right_dtypes, date_now)
+    df_date_col = _add_match_date_col(df_right_dtypes, target_date)
 
     ## add team name
     df_team_col = _add_team_name_col(df_date_col, team_match_table, team_index)
