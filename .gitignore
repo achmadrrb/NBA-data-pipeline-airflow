@@ -210,8 +210,7 @@ datasets/*
 *.ini
 
 # Apache Airflow
-config/*
-!config/.gitkeep
+config/service_account/*.json
 logs/*
 !logs/.gitkeep
 
