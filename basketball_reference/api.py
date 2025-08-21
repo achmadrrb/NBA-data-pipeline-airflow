@@ -3,9 +3,8 @@ An API to collect data from Basketball Reference website
 
 Basketball Reference website: https://www.basketball-reference.com/
 """
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning) # stop getting Pandas FutureWarning's
 
+import warnings
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
@@ -15,17 +14,24 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime, date, timedelta
 import pytz
+from google.cloud import bigquery
+from config import CONFIG
+
+warnings.simplefilter(
+    action="ignore", category=FutureWarning
+)  # stop getting Pandas FutureWarning's
+
 
 def parse_date(target_date=None):
     """
     Parse default date now in Eastern Time. Basketball reference website is using US/Eastern timezone
 
-    :param target_date: target date. This paramater is for specifying previous match date that want to be parsed.
+    :param target_date: target date. This parameter is for specifying previous match date that want to be parsed.
                           The match date is in Eastern Time (based on NBA schedule). Format date (str) : YYYYMMDD or YYYY-MM-DD
     :return: a date as now in Eastern Time.
     """
 
-    if target_date == None:
+    if target_date is None:
         # Create a timezone-aware object for UTC
         utc_timezone = pytz.utc
 
@@ -34,10 +40,11 @@ def parse_date(target_date=None):
 
         # Convert the UTC date to the Eastern Time Zone
         match_date = utc_now.date()
-    else: 
+    else:
         match_date = date.fromisoformat(target_date)
 
     return match_date
+
 
 def _convert_date_to_str(target_date):
     """
@@ -55,11 +62,12 @@ def _convert_date_to_str(target_date):
 
     return month_now, day_now, year_now
 
+
 def get_box_score_list(target_date=None):
     """
     Get a box score list in a match day.
 
-    :param target_date: target date. This paramater is for specifying previous match date that want to be parsed.
+    :param target_date: target date. This parameter is for specifying previous match date that want to be parsed.
                           The match date is in Eastern Time (based on NBA schedule). Format date (str) : YYYYMMDD or YYYY-MM-DD
     :return: A list of html address of box score in a match day
     """
@@ -80,21 +88,23 @@ def get_box_score_list(target_date=None):
     chrome_options.add_argument("--headless")  # Enable headless mode
     chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
     chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid /dev/shm usage
-
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    driver = webdriver.Chrome(
+        service=Service(ChromeDriverManager().install()), options=chrome_options
+    )
     driver.get(url)
     driver.execute_script("window.scrollTo(1,10000)")
     time.sleep(2)
     page = driver.page_source
 
     # Using BeautifulSoup to parse the html of each match i.e. '/boxscores/202403180BOS.html'
-    soup = BeautifulSoup(page, 'html.parser')
+    soup = BeautifulSoup(page, "html.parser")
     box_score_link = soup.find_all("a", string="Box Score")
     box_score_list = []
     for link in box_score_link:
-        box_score_list.append(link.get('href'))
+        box_score_list.append(link.get("href"))
 
     return box_score_list
+
 
 def _proper_table(df):
     """
@@ -104,19 +114,20 @@ def _proper_table(df):
     :return: A transformed dataframe
     """
     # drop Basic Box Score Stats index
-    df = df.droplevel(0, axis=1) 
+    df = df.droplevel(0, axis=1)
     # rename the Starters column to Player column
-    df.rename(columns = {'Starters':'Player'}, inplace = True)
+    df.rename(columns={"Starters": "Player"}, inplace=True)
     # you can use a method to drop Reserves row and Team Totals row instead of split
-    df.drop(len(df)-1, axis=0, inplace=True)
+    df.drop(len(df) - 1, axis=0, inplace=True)
     df.drop(5, inplace=True)
     df.reset_index(drop=True, inplace=True)
     # drop the DNP players
-    df.drop(df[df['MP'] == 'Did Not Play'].index, inplace=True)
-    df.drop(df[df['MP'] == 'Did Not Dress'].index, inplace=True)
-    df.drop(df[df['MP'] == 'Not With Team'].index, inplace=True)
+    df.drop(df[df["MP"] == "Did Not Play"].index, inplace=True)
+    df.drop(df[df["MP"] == "Did Not Dress"].index, inplace=True)
+    df.drop(df[df["MP"] == "Not With Team"].index, inplace=True)
 
     return df
+
 
 def _convert_dtypes(df):
     """
@@ -126,29 +137,30 @@ def _convert_dtypes(df):
     :return: A right converted data types dataframe
     """
     # extract MP column to the right value
-    minute_played = df["MP"].apply(lambda x: int(x.split(':')[0]))
-    second_played = df["MP"].apply(lambda x: int(x.split(':')[1]))
-    df["MP"] = minute_played + round(second_played/60, 1)
+    minute_played = df["MP"].apply(lambda x: int(x.split(":")[0]))
+    second_played = df["MP"].apply(lambda x: int(x.split(":")[1]))
+    df["MP"] = minute_played + round(second_played / 60, 1)
     # convert each column to corresponding data types
-    convert_dict = {'FG': int,
-                    'FGA': int,
-                    'FG%': float,
-                    '3P': int,
-                    '3PA': int,
-                    '3P%': float,
-                    'FT': int,
-                    'FTA': int,
-                    'FT%': float,
-                    'ORB': int,
-                    'DRB': int,
-                    'TRB': int,
-                    'AST': int,
-                    'STL': int,
-                    'BLK': int,
-                    'TOV': int,
-                    'PF': int,
-                    'PTS': int,
-                    }
+    convert_dict = {
+        "FG": int,
+        "FGA": int,
+        "FG%": float,
+        "3P": int,
+        "3PA": int,
+        "3P%": float,
+        "FT": int,
+        "FTA": int,
+        "FT%": float,
+        "ORB": int,
+        "DRB": int,
+        "TRB": int,
+        "AST": int,
+        "STL": int,
+        "BLK": int,
+        "TOV": int,
+        "PF": int,
+        "PTS": int,
+    }
     df = df.astype(convert_dict)
 
     # multiply % columns by 100 to get right value
@@ -158,6 +170,7 @@ def _convert_dtypes(df):
 
     return df
 
+
 def _add_match_date_col(df, target_date):
     """
     Add match day date to dataframe
@@ -166,13 +179,14 @@ def _add_match_date_col(df, target_date):
     :return: A dataframe with match day date in it
     """
     new_matchdate_col = target_date
-    loc_player = df.columns.get_loc('Player')
+    loc_player = df.columns.get_loc("Player")
     try:
-        df.insert(loc=loc_player + 1, column='Date', value=new_matchdate_col)
+        df.insert(loc=loc_player + 1, column="Date", value=new_matchdate_col)
     except ValueError:
         df["Date"] = new_matchdate_col
 
     return df
+
 
 def _add_team_name_col(df, team_match_table, team_index):
     """
@@ -183,16 +197,17 @@ def _add_team_name_col(df, team_match_table, team_index):
     :return: A dataframe with team name in it
     """
     ## add team name
-    team_caption = team_match_table[team_index].find_all('caption')[0]
+    team_caption = team_match_table[team_index].find_all("caption")[0]
     team_name = team_caption.string
-    new_team_col = team_name.split('Basic')[0].strip()
-    loc_date = df.columns.get_loc('Date')
+    new_team_col = team_name.split("Basic")[0].strip()
+    loc_date = df.columns.get_loc("Date")
     try:
-        df.insert(loc=loc_date + 1, column='Tm', value=new_team_col)
+        df.insert(loc=loc_date + 1, column="Tm", value=new_team_col)
     except ValueError:
-        df['Tm'] = new_team_col
+        df["Tm"] = new_team_col
 
     return df
+
 
 def _add_lineup_pos(df):
     """
@@ -202,16 +217,17 @@ def _add_lineup_pos(df):
     :return: A dataframe with Game and Game Started in it
     """
     ## add lineup_pos
-    loc_team = df.columns.get_loc('Tm')
+    loc_team = df.columns.get_loc("Tm")
     try:
-        df.insert(loc=loc_team + 1, column='G', value=1)
-        df.insert(loc=loc_team + 2, column='GS', value=1)
+        df.insert(loc=loc_team + 1, column="G", value=1)
+        df.insert(loc=loc_team + 2, column="GS", value=1)
     except ValueError:
-        df['G'] = 1
-        df['GS'] = 1
-    df.loc[5:, 'GS'] = 0
+        df["G"] = 1
+        df["GS"] = 1
+    df.loc[5:, "GS"] = 0
 
     return df
+
 
 def _add_2s_col(df):
     """
@@ -223,18 +239,19 @@ def _add_2s_col(df):
     ## add 2P 2PA and 2P%
     new_2P_col = df["FG"] - df["3P"]
     new_2PA_col = df["FGA"] - df["3PA"]
-    new_2PP_col = round(((new_2P_col/new_2PA_col) * 100), 1)
-    loc_3P = df.columns.get_loc('3P%')
+    new_2PP_col = round(((new_2P_col / new_2PA_col) * 100), 1)
+    loc_3P = df.columns.get_loc("3P%")
     try:
-        df.insert(loc=loc_3P + 1, column='2P', value=new_2P_col)
-        df.insert(loc=loc_3P + 2, column='2PA', value=new_2PA_col)
-        df.insert(loc=loc_3P + 3, column='2P%', value=new_2PP_col)
+        df.insert(loc=loc_3P + 1, column="2P", value=new_2P_col)
+        df.insert(loc=loc_3P + 2, column="2PA", value=new_2PA_col)
+        df.insert(loc=loc_3P + 3, column="2P%", value=new_2PP_col)
     except ValueError:
         df["2P"] = new_2P_col
         df["2PA"] = new_2PA_col
         df["2P%"] = new_2PP_col
-    
+
     return df
+
 
 def _add_eFG_col(df):
     """
@@ -244,35 +261,37 @@ def _add_eFG_col(df):
     :return: A dataframe with eFG% in it
     """
     ## add eFG%
-    new_eFG_col = round(((df["FG"] + (0.5 * df["3P"]))/df["FGA"]) * 100, 1)
-    loc_2P = df.columns.get_loc('2P%')
+    new_eFG_col = round(((df["FG"] + (0.5 * df["3P"])) / df["FGA"]) * 100, 1)
+    loc_2P = df.columns.get_loc("2P%")
     try:
-        df.insert(loc=loc_2P + 1, column='eFG%', value=new_eFG_col)
+        df.insert(loc=loc_2P + 1, column="eFG%", value=new_eFG_col)
     except ValueError:
         df["eFG%"] = new_eFG_col
-        
+
     return df
 
-def _extract_PM_col(df):
+
+def _extract_plus_minus_col(df):
     """
-    Extract "+/-" column into seperate columns PLUS and MINUS to dataframe
+    Extract "+/-" column into separate columns PLUS and MINUS to dataframe
 
     :param df: dataframe that want to be added
     :return: A dataframe with PLUS and MINUS column in it
     """
     # extract +/- column to separate column named PLUS and MINUS then drop the original column (+/- column)
-    loc_PF = df.columns.get_loc('PF')
+    loc_PF = df.columns.get_loc("PF")
     new_PLUS_col = df["+/-"].apply(lambda x: int(x[1:]) if x[0] == "+" else 0)
     new_MINUS_col = df["+/-"].apply(lambda x: int(x[1:]) if x[0] == "-" else 0)
     try:
-        df.insert(loc=loc_PF + 1, column='PLUS', value=new_PLUS_col)
-        df.insert(loc=loc_PF + 2, column='MINUS', value=new_MINUS_col)
+        df.insert(loc=loc_PF + 1, column="PLUS", value=new_PLUS_col)
+        df.insert(loc=loc_PF + 2, column="MINUS", value=new_MINUS_col)
     except ValueError:
         df["PLUS"] = df["+/-"].apply(lambda x: int(x[1:]) if x[0] == "+" else 0)
-        df["MINUS"]  = df["+/-"].apply(lambda x: int(x[1:]) if x[0] == "-" else 0)
-    df = df.drop(columns=['+/-'])
+        df["MINUS"] = df["+/-"].apply(lambda x: int(x[1:]) if x[0] == "-" else 0)
+    df = df.drop(columns=["+/-"])
 
     return df
+
 
 def clean_data(df, team_match_table, target_date, team_index):
     """
@@ -298,7 +317,7 @@ def clean_data(df, team_match_table, target_date, team_index):
     df_team_col = _add_team_name_col(df_date_col, team_match_table, team_index)
 
     ## add lineup_pos
-    df_lineup_pos_col  = _add_lineup_pos(df_team_col)
+    df_lineup_pos_col = _add_lineup_pos(df_team_col)
 
     ## add 2P 2PA and 2P%
     df_2s_col = _add_2s_col(df_lineup_pos_col)
@@ -307,9 +326,95 @@ def clean_data(df, team_match_table, target_date, team_index):
     df_eFG_col = _add_eFG_col(df_2s_col)
 
     ## extract +/- column to separate column named PLUS and MINUS then drop the original column (+/- column)
-    df_PM_col = _extract_PM_col(df_eFG_col)
+    df_PM_col = _extract_plus_minus_col(df_eFG_col)
 
     # fill NaN with 0.0
     df = df_PM_col.fillna(0.0)
 
     return df
+
+
+def scrape_and_clean():
+    """
+    A combination of match day box score results
+
+    :return: A combined dataframe of match day
+    """
+    box_score_lists = get_box_score_list()
+
+    # Convert the UTC date to the Eastern Time Zone
+    date_now = parse_date()
+
+    # to get the boxscore for each team in a match
+    basketball_reference_web = "https://www.basketball-reference.com"
+
+    combined_df_all = pd.DataFrame()
+
+    for box_score in box_score_lists:
+        box_score_match_url = basketball_reference_web + box_score
+
+        # Initialize Chrome Service with Chromedriver path
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")  # Enable headless mode
+        chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
+        chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid /dev/shm usage
+
+        driver = webdriver.Chrome()
+        driver.get(box_score_match_url)
+        driver.execute_script("window.scrollTo(1,10000)")
+        time.sleep(2)
+
+        page = driver.page_source
+        soup = BeautifulSoup(page, "html.parser")
+        team_match_table = soup.find_all(
+            "table", attrs="sortable stats_table now_sortable"
+        )  # type: ignore
+
+        away_index = 0
+        home_index = 2
+        away_team_table = pd.read_html(str(team_match_table))[away_index]
+        home_team_table = pd.read_html(str(team_match_table))[home_index]
+
+        # Using clean_data helper function
+        away_team = clean_data(away_team_table, team_match_table, date_now, away_index)
+        home_team = clean_data(home_team_table, team_match_table, date_now, home_index)
+
+        # Combine them
+        combined_df_match = pd.concat([away_team, home_team])
+        combined_df_match.reset_index(drop=True, inplace=True)
+
+        combined_df_all = combined_df_all.append(combined_df_match)
+
+    return combined_df_all
+
+
+def upload_to_bigquery(df, table_id):
+    """
+    Upload a dataframe to BigQuery
+
+    :param df: dataframe that want to be uploaded
+    :param table_id: BigQuery table ID for storing basketball data.
+    :return: A result of upload to BigQuery
+    """
+    if df.empty:
+        print("DataFrame is empty. No data to upload.")
+        return
+
+    # Initialize BigQuery client and upload the DataFrame
+    client = bigquery.Client()
+    if not table_id:
+        table_id = CONFIG.bigquery.table_id
+
+    # Ensure the table_id is set
+    if not table_id:
+        raise ValueError("Table ID must be specified for uploading to BigQuery.")
+
+    # Load the DataFrame into BigQuery
+    upload = client.load_table_from_dataframe(df, table_id)
+
+    # Wait for the upload to complete
+    upload.result()
+
+    print(f"Data uploaded to BigQuery table: {table_id}")
+
+    return upload.result()
