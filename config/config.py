@@ -8,6 +8,21 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class GCPSettings(BaseSettings):
+    """Configuration for Google Cloud Platform connection."""
+
+    credentials_path: str | None = Field(
+        default=None,
+        description="Path to the Google Cloud service account key file.",
+    )
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+    )
+
+
 class BigQuerySettings(BaseSettings):
     """Configuration for BigQuery connection and dataset details."""
 
@@ -43,6 +58,11 @@ class Environment(Enum):
 class Config(BaseSettings):
     bigquery: BigQuerySettings = Field(
         default_factory=BigQuerySettings, description="BigQuery configuration settings."
+    )
+
+    gcp: GCPSettings = Field(
+        default_factory=GCPSettings,
+        description="Google Cloud Platform configuration settings.",
     )
 
     model_config = SettingsConfigDict(
