@@ -343,7 +343,7 @@ def scrape_and_clean():
     box_score_lists = get_box_score_list()
 
     # Convert the UTC date to the Eastern Time Zone
-    date_now = parse_date()
+    matchday_date = parse_date()
 
     # to get the boxscore for each team in a match
     basketball_reference_web = "https://www.basketball-reference.com"
@@ -372,12 +372,24 @@ def scrape_and_clean():
 
         away_index = 0
         home_index = 2
-        away_team_table = pd.read_html(str(team_match_table))[away_index]
-        home_team_table = pd.read_html(str(team_match_table))[home_index]
+        try:
+            away_team_table = pd.read_html(str(team_match_table))[away_index]
+            home_team_table = pd.read_html(str(team_match_table))[home_index]
+        except IndexError:
+            print("IndexError on this html: ", box_score)
+            break
 
         # Using clean_data helper function
-        away_team = clean_data(away_team_table, team_match_table, date_now, away_index)
-        home_team = clean_data(home_team_table, team_match_table, date_now, home_index)
+        try:
+            away_team = clean_data(
+                away_team_table, team_match_table, matchday_date, away_index
+            )
+            home_team = clean_data(
+                home_team_table, team_match_table, matchday_date, home_index
+            )
+        except ValueError:
+            print("ValueError on this html: ", box_score)
+            break
 
         # Combine them
         combined_df_match = pd.concat([away_team, home_team])
