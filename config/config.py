@@ -48,6 +48,26 @@ class BigQuerySettings(BaseSettings):
     )
 
 
+class AirflowSettings(BaseSettings):
+    """Configuration for Airflow DAG settings."""
+
+    dag_owner_name: str = Field(
+        default="airflow",
+        description="Owner name for the Airflow DAG.",
+    )
+
+    alert_email_addresses: list[str] = Field(
+        default=list(),
+        description="List of email addresses for alert notifications.",
+    )
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+    )
+
+
 class Environment(Enum):
     """Enumeration for different environments."""
 
@@ -63,6 +83,11 @@ class Config(BaseSettings):
     gcp: GCPSettings = Field(
         default_factory=GCPSettings,
         description="Google Cloud Platform configuration settings.",
+    )
+
+    airflow: AirflowSettings = Field(
+        default_factory=AirflowSettings,
+        description="Airflow configuration settings.",
     )
 
     model_config = SettingsConfigDict(

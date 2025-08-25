@@ -8,6 +8,7 @@ from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 from basketball_reference import scrape_and_clean, upload_to_bigquery
+from config import CONFIG
 
 import warnings
 
@@ -22,9 +23,9 @@ ERROR_SLEEP_MIN = 5
 # Max number of searches to perform daily
 MAX_SEARCHES = 1500
 # Who is listed as the owner of this DAG in the Airflow Web Server
-DAG_OWNER_NAME = "airflow"
+DAG_OWNER_NAME = CONFIG.airflow.dag_owner_name
 # List of email address to send email alerts to if this job fails
-ALERT_EMAIL_ADDRESSES = ["eririfky29@gmail.com"]
+ALERT_EMAIL_ADDRESSES = CONFIG.airflow.alert_email_addresses
 START_DATE = airflow.utils.dates.days_ago(1)
 
 default_args = {
