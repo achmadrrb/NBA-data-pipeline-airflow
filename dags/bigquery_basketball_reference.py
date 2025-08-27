@@ -2,8 +2,7 @@
 An operations workflow to load data from basketball-reference website to BigQuery.
 """
 
-from datetime import timedelta
-import airflow
+from datetime import datetime, timedelta, timezone
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
@@ -26,7 +25,7 @@ MAX_SEARCHES = 1500
 DAG_OWNER_NAME = CONFIG.airflow.dag_owner_name
 # List of email address to send email alerts to if this job fails
 ALERT_EMAIL_ADDRESSES = CONFIG.airflow.alert_email_addresses
-START_DATE = airflow.utils.dates.days_ago(1)
+START_DATE = datetime(2025, 10, 21, 13, 0, tzinfo=timezone.utc)
 
 default_args = {
     "owner": DAG_OWNER_NAME,
@@ -46,7 +45,6 @@ dag = DAG(
     schedule_interval="0 13 * * *",
     catchup=False,
     tags=["data-pipeline-dag"],
-    max_active_tasks=3,
 )
 
 with dag:
