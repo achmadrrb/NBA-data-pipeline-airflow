@@ -9,12 +9,15 @@ from .api import (
     upload_to_bigquery,
 )  # Import the Config class from config/config.py
 
+from .scraper import scrape_games  # Import the scrape_games function from scraper.py
+
 __all__ = [
     "parse_date",
     "get_box_score_list",
     "clean_data",
     "scrape_and_clean",
     "upload_to_bigquery",
+    "scrape_games",
 ]
 
 # This allows for easy access to the Config class and its attributes.
