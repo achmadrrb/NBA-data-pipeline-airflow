@@ -3,10 +3,13 @@ An operations workflow to load data from basketball-reference website to BigQuer
 """
 
 from datetime import datetime, timedelta, timezone
+import pandas as pd
+from io import StringIO
 from airflow import DAG
+from airflow.decorators import task
 from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators.python_operator import PythonOperator
-from basketball_reference import scrape_and_clean, upload_to_bigquery
+from google.cloud import storage
+from basketball_reference import scrape_games
 from config import CONFIG
 
 import warnings
@@ -27,6 +30,38 @@ DAG_OWNER_NAME = CONFIG.airflow.dag_owner_name
 ALERT_EMAIL_ADDRESSES = CONFIG.airflow.alert_email_addresses
 START_DATE = datetime(2025, 10, 21, 13, 0, tzinfo=timezone.utc)
 
+BUCKET_NAME = CONFIG.gcs.bucket_name
+
+
+@task
+def extract_games(date: str) -> pd.DataFrame:
+    """
+    Scrape NBA games for given date, save as CSV locally.
+    Returns DataFrame.
+    """
+    df = scrape_games(date)
+    if df.empty:
+        raise ValueError(f"No games found for {date}")
+    return df
+
+
+@task
+def upload_df_to_gcs(df: pd.DataFrame, date: str) -> str:
+    """
+    Upload Pandas DataFrame directly to GCS as CSV and return GCS path.
+    """
+    client = storage.Client()
+    bucket = client.bucket(BUCKET_NAME)
+    blob = bucket.blob(f"raw/games/{date}/games.csv")
+
+    # Convert DataFrame to CSV string in-memory
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer, index=False)
+    blob.upload_from_string(csv_buffer.getvalue(), content_type="text/csv")
+
+    return f"gs://{BUCKET_NAME}/raw/games/{date}/games.csv"
+
+
 default_args = {
     "owner": DAG_OWNER_NAME,
     "depends_on_past": False,
@@ -39,8 +74,8 @@ default_args = {
 }
 
 dag = DAG(
-    "basketball-reference_bigquery",
-    description="Call basketball-reference API and insert results into Bigquery",
+    "nba_extract_to_gcs_v1",
+    description="Call basketball-reference API and store raw data in GCS",
     default_args=default_args,
     schedule_interval="0 13 * * *",
     catchup=False,
@@ -50,18 +85,10 @@ dag = DAG(
 with dag:
     start = DummyOperator(task_id="start", dag=dag)
 
-    player_daily_results = PythonOperator(
-        task_id="player_daily_results",
-        provide_context=True,
-        python_callable=scrape_and_clean,
-    )
-
-    load_data = PythonOperator(
-        task_id="player_daily_results",
-        provide_context=True,
-        python_callable=upload_to_bigquery,
-    )
+    # Bronze -> Scrape data and store in GCS
+    games_df = extract_games("{{ ds }}")
+    gcs_path = upload_df_to_gcs(games_df, "{{ ds }}")
 
     finish = DummyOperator(task_id="finish", dag=dag)
 
-    start >> player_daily_results >> load_data >> finish
+    start >> games_df >> gcs_path >> finish

@@ -48,6 +48,26 @@ class BigQuerySettings(BaseSettings):
     )
 
 
+class GCSSettings(BaseSettings):
+    """Configuration for Google Cloud Storage connection and bucket details."""
+
+    bucket_name: str | None = Field(
+        default=None,
+        description="Google Cloud Storage bucket name.",
+    )
+
+    raw_data_path: str = Field(
+        default="raw",
+        description="Path in GCS bucket for raw data storage.",
+    )
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+    )
+
+
 class AirflowSettings(BaseSettings):
     """Configuration for Airflow DAG settings."""
 
@@ -83,6 +103,11 @@ class Config(BaseSettings):
     gcp: GCPSettings = Field(
         default_factory=GCPSettings,
         description="Google Cloud Platform configuration settings.",
+    )
+
+    gcs: GCSSettings = Field(
+        default_factory=GCSSettings,
+        description="Google Cloud Storage configuration settings.",
     )
 
     airflow: AirflowSettings = Field(
