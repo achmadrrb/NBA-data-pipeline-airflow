@@ -1,3 +1,4 @@
+from io import StringIO
 from bs4 import BeautifulSoup
 import pandas as pd
 from selenium import webdriver
@@ -22,7 +23,7 @@ def scrape_games(date: str) -> pd.DataFrame:
         pd.DataFrame: Games data
     """
     year, month, day = date.split("-")
-    url = f"https://www.basketball-reference.com/boxscores/?month={month}&day={day}&year={year}"
+    url = f"https://www.basketball-reference.com/friv/dailyleaders.fcgi?month={month}&day={day}&year={year}"
 
     driver = init_driver()
     driver.get(url)
@@ -31,9 +32,12 @@ def scrape_games(date: str) -> pd.DataFrame:
     soup = BeautifulSoup(driver.page_source, "html.parser")
     driver.quit()
 
-    table = soup.find("table", {"id": "schedule"})
+    table = soup.find_all(
+        "table", attrs="sortable stats_table now_sortable sticky_table eq2 re2 le2"
+    )
     if table:
-        df = pd.read_html(str(table))[0]
+        table_html = str(table[0])
+        df = pd.read_html(StringIO(table_html))[0]
         return df
     else:
         return pd.DataFrame()  # empty if no games found
