@@ -1,6 +1,11 @@
 # NBA Data Scraping Pipeline using Beautiful Soup, Airflow, and BigQuery
 
 
+## Overview
+
+### Data Pipeline (ELT Workflow)
+![alt text](assets/nba-data-pipeline.png?raw=true)
+
 ## Requirement
 
 - uv
