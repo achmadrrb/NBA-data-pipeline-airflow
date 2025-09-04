@@ -14,6 +14,18 @@ def init_driver():
     return driver
 
 
+def clean_column_names(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df.columns = (
+        df.columns.str.strip()  # remove leading/trailing spaces
+        .str.replace(r"%", "_percent", regex=True)  # replace % with _percent
+        .str.replace(r"[^\w]", "_", regex=True)  # replace non-alphanumeric with _
+        .str.replace(r"__+", "_", regex=True)  # collapse multiple underscores
+        .str.lower()  # optional: lowercase for consistency
+    )
+    return df
+
+
 def scrape_games(date: str) -> pd.DataFrame:
     """
     Scrape Basketball Reference games table for a given date.
@@ -38,6 +50,7 @@ def scrape_games(date: str) -> pd.DataFrame:
     if table:
         table_html = str(table[0])
         df = pd.read_html(StringIO(table_html))[0]
+        df = clean_column_names(df)
         return df
     else:
         return pd.DataFrame()  # empty if no games found

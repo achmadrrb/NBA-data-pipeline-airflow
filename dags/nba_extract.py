@@ -8,6 +8,7 @@ from io import StringIO
 from airflow import DAG
 from airflow.decorators import task
 from airflow.operators.dummy_operator import DummyOperator
+from airflow.providers.google.cloud.operators.gcs import GCSToBigQueryOperator
 from google.cloud import storage
 from basketball_reference import scrape_games
 from config import CONFIG
@@ -31,6 +32,9 @@ ALERT_EMAIL_ADDRESSES = CONFIG.airflow.alert_email_addresses
 START_DATE = datetime(2025, 10, 21, 13, 0, tzinfo=timezone.utc)
 
 BUCKET_NAME = CONFIG.gcs.bucket_name
+PROJECT_ID = CONFIG.bigquery.project_id
+DATASET_ID = CONFIG.bigquery.dataset_id
+TABLE_ID = CONFIG.bigquery.table_id
 
 
 @task
@@ -59,7 +63,7 @@ def upload_df_to_gcs(df: pd.DataFrame, date: str) -> str:
     df.to_csv(csv_buffer, index=False)
     blob.upload_from_string(csv_buffer.getvalue(), content_type="text/csv")
 
-    return f"gs://{BUCKET_NAME}/raw/games/{date}/games.csv"
+    return f"gs://{BUCKET_NAME}/raw/games/{date}/games_{date}.csv"
 
 
 default_args = {
@@ -88,7 +92,46 @@ with dag:
     # Bronze -> Scrape data and store in GCS
     games_df = extract_games("{{ ds }}")
     gcs_path = upload_df_to_gcs(games_df, "{{ ds }}")
+    load_raw_stats = GCSToBigQueryOperator(
+        task_id="load_raw_stats",
+        bucket="nba-data-pipeline",
+        source_objects=["raw/games/{ ds }/games_{ ds }.csv"],
+        destination_project_dataset_table=f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}",
+        schema_fields=[
+            {"name": "rk", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "player", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "tm", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "unnamed_3", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "opp", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "unnamed_5", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "mp", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "fg", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "fga", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "fg_percent", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "3p", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "3pa", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "3p_percent", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "ft", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "fta", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "ft_percent", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "orb", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "drb", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "trb", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "ast", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "stl", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "blk", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "tov", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "pf", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "pts", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "+/-", "type": "STRING", "mode": "NULLABLE"},
+            {"name": "game_score", "type": "STRING", "mode": "NULLABLE"},
+        ],
+        skip_leading_rows=1,  # ignore header row
+        source_format="CSV",
+        write_disposition="WRITE_APPEND",
+        create_disposition="CREATE_IF_NEEDED",
+    )
 
     finish = DummyOperator(task_id="finish", dag=dag)
 
-    start >> games_df >> gcs_path >> finish
+    start >> games_df >> gcs_path >> load_raw_stats >> finish
