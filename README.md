@@ -6,6 +6,9 @@
 ### Data Pipeline (ELT Workflow)
 ![alt text](assets/nba-data-pipeline.png?raw=true)
 
+### Data Model Diagram
+![alt text](assets/data-model-NBA-diagram.png?raw=true)
+
 ## Requirement
 
 - uv
