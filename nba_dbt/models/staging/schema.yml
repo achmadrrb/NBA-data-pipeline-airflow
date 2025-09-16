@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  # ------------------------
+  # Silver (staging models)
+  # ------------------------
+  - name: stg_player_game_stats
+    columns:
+      - name: game_id
+        tests:
+          - not_null
+      - name: player_id
+        tests:
+          - not_null
+      - name: team_id
+        tests:
+          - not_null
+      - name: fg_pct
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+      - name: ft_pct
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+      - name: threep_pct
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+
+  - name: stg_teams
+    columns:
+      - name: team_id
+        tests:
+          - not_null
+          - unique
+      - name: team_name
+        tests:
+          - not_null
+
+  - name: stg_players
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+          - unique
+      - name: player_name
+        tests:
+          - not_null
